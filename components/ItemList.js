@@ -1,8 +1,38 @@
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList, Image, ScrollView, TextInput, Button, Pressable } from 'react-native';
+import { useChart } from './hook/useChart';
 
-const ItemList = ({title, img, description, price}) => {
+
+const ItemList = ({id, title, img, description, price}) => {
+    const {chartList, setChartList} = useChart();
+    const [quantity, setQuantity] = useState('1');
+    const realPrice = (parseInt(quantity) * price).toFixed(2);
+    const addToCart = (title) => {
+        const correctQuantity = quantity==='' ? '0' : quantity
+        const found = chartList.find(item => item.title===title)
+        if(found){
+            const index = chartList.findIndex((item) => item.title===title)
+            const toUpdate = chartList
+            toUpdate[index].quantity = (parseInt(toUpdate[index].quantity) + parseInt(correctQuantity)).toString()
+            setChartList(toUpdate)
+            
+            
+        }
+        else{
+            const newBoughtItem = {
+                id:id,
+                title:title,
+                img:img,
+                description:description,
+                price:price,
+                quantity:correctQuantity,
+            }
+            setChartList([...chartList,newBoughtItem])
+        }
+        
+    }
+    
     return(
         <View style={styles.singleItem}>
             <Image style={styles.imageSize} source={img}></Image>
@@ -18,17 +48,24 @@ const ItemList = ({title, img, description, price}) => {
                         <TextInput 
                             style={styles.textInput} 
                             keyboardType='numeric'
+                            value={quantity}
+                            onChangeText={(e) => {
+                                setQuantity(e)
+                            }}
                         />
                     </View>
                     <View style={styles.digital}><Text>PHYSICAL COPY</Text></View>
                 </View>
                 <View style={styles.shop}>
-                    <View style={styles.priceContainer}><Text style={styles.priceStyle}>{`$${price}`}</Text></View>
-                    <View style={styles.addStyle}>
-                        <Pressable>
+                    <View style={styles.priceContainer}><Text style={styles.priceStyle}>{quantity===""? "$0.00":`$${realPrice}`}</Text></View>
+                    <Pressable 
+                        style={({pressed}) => pressed ? styles.pressedItem : styles.addStyle}
+                        onPress={() => addToCart(title)}
+                    >
+                        <View>
                             <Text style={{color:'white',fontWeight:'bold'}}>ADD TO CART</Text>
-                        </Pressable>
-                    </View>
+                        </View>
+                    </Pressable>
                 </View>
             </View>
         </View>
@@ -85,7 +122,8 @@ const styles = StyleSheet.create({
     textInput:{
         borderWidth :1,
         borderColor: '#cccccc',
-        width:'60%'
+        width:'60%',
+        paddingLeft:4,
     },
     digital:{
         width:'70%',
@@ -106,6 +144,14 @@ const styles = StyleSheet.create({
         fontSize: 23,
     },
     addStyle:{
+        backgroundColor: 'blue',
+        width: '70%',
+        flexDirection:'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pressedItem:{
+        opacity:0.5,
         backgroundColor: 'blue',
         width: '70%',
         flexDirection:'column',
